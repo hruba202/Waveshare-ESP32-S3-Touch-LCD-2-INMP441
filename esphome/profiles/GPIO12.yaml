@@ -1,0 +1,6 @@
+# Default: microphone on GPIO12. Camera must be physically disconnected.
+display:
+  - id: !extend lcd
+    auto_clear_enabled: true
+    lambda: |-
+      id(mic_stream).draw_status(it);
