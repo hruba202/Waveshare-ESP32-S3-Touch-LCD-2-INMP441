@@ -1,0 +1,95 @@
+# Merged from the supplied stage-1 YAML. That file contains no touch/LVGL blocks.
+substitutions:
+  # V1 only: GPIO12 = microphone only; GPIO18 = supplied camera + microphone.
+  mic_sd_pin: GPIO12
+
+packages:
+  stage1_board: !include board-from-stage1.yaml
+  selected_profile: !include profiles/${mic_sd_pin}.yaml
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [lan_microphone]
+
+# Keep the device available for PC diagnostics if HA's API is down.
+api:
+  reboot_timeout: 0s
+
+i2s_audio:
+  id: mic_i2s
+  i2s_bclk_pin: GPIO43
+  i2s_lrclk_pin: GPIO44
+
+microphone:
+  - platform: i2s_audio
+    id: inmp441
+    i2s_audio_id: mic_i2s
+    adc_type: external
+    i2s_din_pin: ${mic_sd_pin}
+    pdm: false
+    channel: left
+    sample_rate: 16000
+    bits_per_sample: 32bit
+    correct_dc_offset: false
+    on_data:
+      - lambda: |-
+          id(mic_stream).on_data(x);
+
+lan_microphone:
+  id: mic_stream
+  microphone_id: inmp441
+  port: 8081
+  token: !secret audio_stream_token
+  allowed_subnet: !secret audio_allowed_subnet
+  input_rms:
+    name: Microphone Input RMS
+  output_rms:
+    name: Microphone Output RMS
+  output_peak:
+    name: Microphone Output Peak
+  clipping:
+    name: Microphone Clipping
+  dropped_blocks:
+    name: Microphone Dropped Blocks
+  samples_per_second:
+    name: Microphone Samples Per Second
+  zero_samples:
+    name: Microphone Zero Samples
+  input_near_rail:
+    name: Microphone Input Near Rail
+  connections:
+    name: Microphone Connections
+
+switch:
+  - platform: template
+    id: stream_enabled
+    name: Microphone Stream
+    icon: mdi:microphone
+    restore_mode: ALWAYS_OFF
+    lambda: return id(mic_stream).is_enabled();
+    turn_on_action:
+      - lambda: id(mic_stream).set_enabled(true);
+    turn_off_action:
+      - lambda: id(mic_stream).set_enabled(false);
+
+number:
+  - platform: template
+    id: mic_gain
+    name: Microphone Gain
+    icon: mdi:volume-high
+    min_value: 1
+    max_value: 32
+    step: 1
+    initial_value: 1
+    optimistic: true
+    restore_value: false
+    set_action:
+      - lambda: id(mic_stream).set_gain(x);
+
+binary_sensor:
+  - platform: template
+    name: Microphone Sending
+    lambda: return id(mic_stream).is_sending();
+

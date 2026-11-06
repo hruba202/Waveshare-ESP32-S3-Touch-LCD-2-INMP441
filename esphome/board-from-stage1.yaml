@@ -1,0 +1,67 @@
+# Merged from the user-supplied stage-1 YAML (no touchscreen/LVGL sections in that file).
+# Display/camera mode is selected in profiles/${mic_sd_pin}.yaml.
+
+esphome:
+  name: waveshare-camera
+  friendly_name: Waveshare Camera
+  min_version: 2026.10.0
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    version: 5.5.6
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+
+api:
+  encryption:
+    key: !secret esp_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  reboot_timeout: 0s
+
+spi:
+  clk_pin: GPIO39
+  mosi_pin: GPIO38
+  miso_pin: GPIO40
+
+output:
+  - platform: gpio
+    id: lcd_backlight
+    pin: GPIO1
+
+light:
+  - platform: binary
+    name: Display Backlight
+    output: lcd_backlight
+    restore_mode: ALWAYS_ON
+
+display:
+  - platform: ili9xxx
+    id: lcd
+    model: ST7789V
+    rotation: 270
+    dimensions:
+      width: 240
+      height: 320
+    cs_pin: GPIO45
+    dc_pin: GPIO42
+    invert_colors: true
+    color_order: BGR
+    data_rate: 40MHz
+    update_interval: 1s
+    auto_clear_enabled: false
