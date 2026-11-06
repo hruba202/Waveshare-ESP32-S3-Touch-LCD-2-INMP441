@@ -1,8 +1,0 @@
-# V1 only: microphone on free GPIO18, camera from the supplied stage-1 YAML.
-packages:
-  stage1_camera: !include ../camera-from-stage1.yaml
-display:
-  - id: !extend lcd
-    lambda: |-
-      camera_preview::draw(it);
-      id(mic_stream).draw_overlay(it);
